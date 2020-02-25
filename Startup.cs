@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -10,6 +11,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.FileProviders;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.Logging;
@@ -57,7 +59,15 @@ namespace UpdateProvider
             }
 
             app.UseHttpsRedirection();
+            app.UseStaticFiles();
 
+            app.UseFileServer(new FileServerOptions() {
+                FileProvider = new PhysicalFileProvider(
+                    Path.Combine(Directory.GetCurrentDirectory(), "files")),
+                    RequestPath = new Microsoft.AspNetCore.Http.PathString(""),
+                    EnableDirectoryBrowsing = false
+            });
+            
             app.UseRouting();
 
             app.UseAuthorization();
