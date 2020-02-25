@@ -39,6 +39,8 @@ namespace UpdateProvider
 
             services.AddDbContext<UpdatesContext>(x => x.UseSqlServer(connectionString));
 
+            services.AddDirectoryBrowser();
+
             services.AddAuthentication(options =>
             {
                 options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
@@ -59,15 +61,27 @@ namespace UpdateProvider
             }
 
             app.UseHttpsRedirection();
-            app.UseStaticFiles();
-
-            app.UseFileServer(new FileServerOptions() {
+            app.UseStaticFiles(new StaticFileOptions{
                 FileProvider = new PhysicalFileProvider(
-                    Path.Combine(Directory.GetCurrentDirectory(), "files")),
-                    RequestPath = new Microsoft.AspNetCore.Http.PathString(""),
-                    EnableDirectoryBrowsing = false
+                Path.Combine(Directory.GetCurrentDirectory(), "files")),
+                RequestPath = "",
+                ServeUnknownFileTypes = true
             });
-            
+
+            app.UseDirectoryBrowser(new DirectoryBrowserOptions
+            {
+                FileProvider = new PhysicalFileProvider(
+                Path.Combine(Directory.GetCurrentDirectory(), "files")),
+                RequestPath = "",
+            });
+
+            // app.UseFileServer(new FileServerOptions() {
+            //     FileProvider = new PhysicalFileProvider(
+            //         Path.Combine(Directory.GetCurrentDirectory(), "files")),
+            //         RequestPath = new Microsoft.AspNetCore.Http.PathString(""),
+            //         EnableDirectoryBrowsing = false
+            // });
+
             app.UseRouting();
 
             app.UseAuthorization();
