@@ -3,11 +3,9 @@ GO
 
 /****** Object:  Database [updates]    Script Date: 2/24/2020 11:22:27 AM ******/
 CREATE DATABASE [updates]
- CONTAINMENT = NONE
- ON  PRIMARY 
-( NAME = N'updates', FILENAME = N'C:\Program Files\Microsoft SQL Server\MSSQL14.MSSQLSERVER\MSSQL\DATA\updates.mdf' , SIZE = 8192KB , MAXSIZE = UNLIMITED, FILEGROWTH = 65536KB )
- LOG ON 
-( NAME = N'updates_log', FILENAME = N'C:\Program Files\Microsoft SQL Server\MSSQL14.MSSQLSERVER\MSSQL\DATA\updates_log.ldf' , SIZE = 8192KB , MAXSIZE = 2048GB , FILEGROWTH = 65536KB )
+GO
+
+ALTER DATABASE [updates] SET COMPATIBILITY_LEVEL = 140
 GO
 
 IF (1 = FULLTEXTSERVICEPROPERTY('IsFullTextInstalled'))
@@ -107,10 +105,6 @@ ALTER DATABASE [updates] SET QUERY_STORE = OFF
 GO
 
 ALTER DATABASE [updates] SET  READ_WRITE 
-GO
-
-
-USE [updates]
 GO
 
 USE [updates]

@@ -38,7 +38,7 @@ namespace UpdateProvider.Controllers
 
     [AllowAnonymous]
     [HttpGet]
-    public async Task<JsonResult> Get(string app, string version, bool latest = false)
+    public async Task<JsonResult> Get(string app = "", string version = "", bool latest = false)
     {
       Version versionInfo = new Version(version);
       
@@ -63,11 +63,11 @@ namespace UpdateProvider.Controllers
 
       if (update != null)
       {
-        if (latestUpdate.Major == versionInfo.Major && latestUpdate.Minor == versionInfo.Minor && latestUpdate.Patch == versionInfo.Patch && latestUpdate.Build == versionInfo.Build)
+        if (update.Major == versionInfo.Major && update.Minor == versionInfo.Minor && update.Patch == versionInfo.Patch && update.Build == versionInfo.Build)
         {
           return new JsonResult(null);
         }
-        else if (IsNewerVersion(versionInfo, latestUpdate))
+        else if (IsNewerVersion(versionInfo, update))
         {
           return new JsonResult(null);
         }
@@ -78,6 +78,16 @@ namespace UpdateProvider.Controllers
         info.FileName = update.File;
         info.URL = string.Format("https://updates.levrum.com/{0}", update.File);
         info.Version = string.Format("{0}.{1}.{2}.{3}", update.Major, update.Minor, update.Patch, update.Build);
+
+        History entry = new History();
+        entry.Address = Request.HttpContext.Connection.RemoteIpAddress.ToString();
+        entry.Date = DateTime.Now;
+        entry.DeliveredVersion = update.Id;
+        if (currentUpdate != null) {
+          entry.PreviousVersion = currentUpdate.Id;
+        }
+        
+        await this.DbContext.History.AddAsync(entry);
 
         return new JsonResult(info);
       }
@@ -115,7 +125,7 @@ namespace UpdateProvider.Controllers
         }
       }
 
-      public Version(string versionString)
+      public Version(string versionString = "")
       {
         int[] versionNumbers = new int[4];
         string[] versionStrings = versionString.Split('.');
