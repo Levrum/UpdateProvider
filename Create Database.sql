@@ -1,0 +1,188 @@
+USE [master]
+GO
+
+/****** Object:  Database [updates]    Script Date: 2/24/2020 11:22:27 AM ******/
+CREATE DATABASE [updates]
+ CONTAINMENT = NONE
+ ON  PRIMARY 
+( NAME = N'updates', FILENAME = N'C:\Program Files\Microsoft SQL Server\MSSQL14.MSSQLSERVER\MSSQL\DATA\updates.mdf' , SIZE = 8192KB , MAXSIZE = UNLIMITED, FILEGROWTH = 65536KB )
+ LOG ON 
+( NAME = N'updates_log', FILENAME = N'C:\Program Files\Microsoft SQL Server\MSSQL14.MSSQLSERVER\MSSQL\DATA\updates_log.ldf' , SIZE = 8192KB , MAXSIZE = 2048GB , FILEGROWTH = 65536KB )
+GO
+
+IF (1 = FULLTEXTSERVICEPROPERTY('IsFullTextInstalled'))
+begin
+EXEC [updates].[dbo].[sp_fulltext_database] @action = 'enable'
+end
+GO
+
+ALTER DATABASE [updates] SET ANSI_NULL_DEFAULT OFF 
+GO
+
+ALTER DATABASE [updates] SET ANSI_NULLS OFF 
+GO
+
+ALTER DATABASE [updates] SET ANSI_PADDING OFF 
+GO
+
+ALTER DATABASE [updates] SET ANSI_WARNINGS OFF 
+GO
+
+ALTER DATABASE [updates] SET ARITHABORT OFF 
+GO
+
+ALTER DATABASE [updates] SET AUTO_CLOSE OFF 
+GO
+
+ALTER DATABASE [updates] SET AUTO_SHRINK OFF 
+GO
+
+ALTER DATABASE [updates] SET AUTO_UPDATE_STATISTICS ON 
+GO
+
+ALTER DATABASE [updates] SET CURSOR_CLOSE_ON_COMMIT OFF 
+GO
+
+ALTER DATABASE [updates] SET CURSOR_DEFAULT  GLOBAL 
+GO
+
+ALTER DATABASE [updates] SET CONCAT_NULL_YIELDS_NULL OFF 
+GO
+
+ALTER DATABASE [updates] SET NUMERIC_ROUNDABORT OFF 
+GO
+
+ALTER DATABASE [updates] SET QUOTED_IDENTIFIER OFF 
+GO
+
+ALTER DATABASE [updates] SET RECURSIVE_TRIGGERS OFF 
+GO
+
+ALTER DATABASE [updates] SET  DISABLE_BROKER 
+GO
+
+ALTER DATABASE [updates] SET AUTO_UPDATE_STATISTICS_ASYNC OFF 
+GO
+
+ALTER DATABASE [updates] SET DATE_CORRELATION_OPTIMIZATION OFF 
+GO
+
+ALTER DATABASE [updates] SET TRUSTWORTHY OFF 
+GO
+
+ALTER DATABASE [updates] SET ALLOW_SNAPSHOT_ISOLATION OFF 
+GO
+
+ALTER DATABASE [updates] SET PARAMETERIZATION SIMPLE 
+GO
+
+ALTER DATABASE [updates] SET READ_COMMITTED_SNAPSHOT OFF 
+GO
+
+ALTER DATABASE [updates] SET HONOR_BROKER_PRIORITY OFF 
+GO
+
+ALTER DATABASE [updates] SET RECOVERY SIMPLE 
+GO
+
+ALTER DATABASE [updates] SET  MULTI_USER 
+GO
+
+ALTER DATABASE [updates] SET PAGE_VERIFY CHECKSUM  
+GO
+
+ALTER DATABASE [updates] SET DB_CHAINING OFF 
+GO
+
+ALTER DATABASE [updates] SET FILESTREAM( NON_TRANSACTED_ACCESS = OFF ) 
+GO
+
+ALTER DATABASE [updates] SET TARGET_RECOVERY_TIME = 60 SECONDS 
+GO
+
+ALTER DATABASE [updates] SET DELAYED_DURABILITY = DISABLED 
+GO
+
+ALTER DATABASE [updates] SET QUERY_STORE = OFF
+GO
+
+ALTER DATABASE [updates] SET  READ_WRITE 
+GO
+
+
+USE [updates]
+GO
+
+USE [updates]
+GO
+
+/****** Object:  Table [dbo].[Update]    Script Date: 2/25/2020 11:09:39 AM ******/
+SET ANSI_NULLS ON
+GO
+
+SET QUOTED_IDENTIFIER ON
+GO
+
+CREATE TABLE [dbo].[Update](
+	[Id] [int] IDENTITY(1,1) NOT NULL,
+	[Product] [nvarchar](64) NOT NULL,
+	[Name] [nvarchar](128) NOT NULL,
+	[Description] [nvarchar](256) NULL,
+	[Previous Major] [int] NOT NULL,
+	[Previous Minor] [int] NOT NULL,
+	[Previous Patch] [int] NOT NULL,
+	[Previous Build] [int] NOT NULL,
+	[Major] [int] NOT NULL,
+	[Minor] [int] NOT NULL,
+	[Patch] [int] NOT NULL,
+	[Build] [int] NOT NULL,
+	[File] [nvarchar](256) NOT NULL,
+	[Latest] [bit] NOT NULL,
+	[Beta] [bit] NOT NULL,
+ CONSTRAINT [PK_Updates] PRIMARY KEY CLUSTERED 
+(
+	[Id] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+
+ALTER TABLE [dbo].[Update] ADD  CONSTRAINT [DF_Update_Latest]  DEFAULT ((0)) FOR [Latest]
+GO
+
+ALTER TABLE [dbo].[Update] ADD  CONSTRAINT [DF_Update_Beta]  DEFAULT ((0)) FOR [Beta]
+GO
+
+/****** Object:  Table [dbo].[History]    Script Date: 2/24/2020 11:26:23 AM ******/
+SET ANSI_NULLS ON
+GO
+
+SET QUOTED_IDENTIFIER ON
+GO
+
+CREATE TABLE [History](
+	[Id] [int] IDENTITY(1,1) NOT NULL,
+	[Date] [datetime2](7) NOT NULL,
+	[Address] [nvarchar](256) NOT NULL,
+	[PreviousVersion] [int] NULL,
+	[DeliveredVersion] [int] NOT NULL,
+ CONSTRAINT [PK_History] PRIMARY KEY CLUSTERED 
+(
+	[Id] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+
+ALTER TABLE [History]  WITH CHECK ADD  CONSTRAINT [FK_History_Update_DeliveredVersion] FOREIGN KEY([DeliveredVersion])
+REFERENCES [Update] ([Id])
+GO
+
+ALTER TABLE [History] CHECK CONSTRAINT [FK_History_Update_DeliveredVersion]
+GO
+
+ALTER TABLE [History]  WITH CHECK ADD  CONSTRAINT [FK_History_Update_PreviousVersion] FOREIGN KEY([PreviousVersion])
+REFERENCES [Update] ([Id])
+GO
+
+ALTER TABLE [History] CHECK CONSTRAINT [FK_History_Update_PreviousVersion]
+GO
+
