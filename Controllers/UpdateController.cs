@@ -40,35 +40,36 @@ namespace UpdateProvider.Controllers
     [HttpGet]
     public async Task<JsonResult> Get(string app = "", string version = "", bool latest = false)
     {
-      Version versionInfo = new Version(version);
+      Version currentVersion;
+      try {
+        currentVersion = new Version(version);
+      } catch (Exception ex) {
+        currentVersion = new Version(0,0,0,0);
+        latest = true;
+      }
       
       Update currentUpdate = await this.DbContext.Update.SingleOrDefaultAsync(
-        u => u.Product.ToLower() == app.ToLower() &&
-        u.Major == versionInfo.Major &&
-        u.Minor == versionInfo.Minor &&
-        u.Patch == versionInfo.Patch &&
-        u.Build == versionInfo.Build);
+        u => u.Product.ToLower() == app.ToLower() && 
+        u.Major == currentVersion.Major &&
+        u.Minor == currentVersion.Minor &&
+        u.Build == currentVersion.Build &&
+        u.Revision == currentVersion.Revision);
 
       Update update = null;
       Update latestUpdate = await this.DbContext.Update.SingleOrDefaultAsync(u => u.Product.ToLower() == app.ToLower() && u.Latest == true);
       Update specificUpdate = await this.DbContext.Update.SingleOrDefaultAsync(
-        u => u.Product.ToLower() == app.ToLower() &&
-        u.PreviousMajor == versionInfo.Major &&
-        u.PreviousMinor == versionInfo.Minor &&
-        u.PreviousPatch == versionInfo.Patch &&
-        u.PreviousBuild == versionInfo.Build
-      );
+        u => u.Product.ToLower() == app.ToLower() && 
+        u.PreviousMajor == currentVersion.Major &&
+        u.PreviousMinor == currentVersion.Minor &&
+        u.Build == currentVersion.Build &&
+        u.Revision == currentVersion.Revision);
 
       update = specificUpdate == null ? latestUpdate : specificUpdate;
 
       if (update != null)
       {
-        if (update.Major == versionInfo.Major && update.Minor == versionInfo.Minor && update.Patch == versionInfo.Patch && update.Build == versionInfo.Build)
-        {
-          return new JsonResult(null);
-        }
-        else if (IsNewerVersion(versionInfo, update))
-        {
+        Version updateVersion = new Version(update.Major, update.Minor, update.Build, update.Revision);
+        if (updateVersion <= currentVersion) {
           return new JsonResult(null);
         }
 
@@ -77,7 +78,7 @@ namespace UpdateProvider.Controllers
         info.Description = update.Description;
         info.FileName = update.File;
         info.URL = string.Format("https://updates.levrum.com/{0}", update.File);
-        info.Version = string.Format("{0}.{1}.{2}.{3}", update.Major, update.Minor, update.Patch, update.Build);
+        info.Version = string.Format("{0}.{1}.{2}.{3}", update.Major, update.Minor, update.Build, update.Revision);
 
         History entry = new History();
         entry.Address = Request.HttpContext.Connection.RemoteIpAddress.ToString();
@@ -88,6 +89,7 @@ namespace UpdateProvider.Controllers
         }
         
         await this.DbContext.History.AddAsync(entry);
+        await this.DbContext.SaveChangesAsync();
 
         return new JsonResult(info);
       }
@@ -95,79 +97,112 @@ namespace UpdateProvider.Controllers
       return new JsonResult(null);
     }
 
-    public class Version
-    {
-      public int Major { get; set; } = 0;
-      public int Minor { get; set; } = 0;
-      public int Patch { get; set; } = 0;
-      public int Build { get; set; } = 0;
-
-      public Version(int[] versionNumbers)
-      {
-        if (versionNumbers.Length > 0)
-        {
-          Major = versionNumbers[0];
-        }
-
-        if (versionNumbers.Length > 1)
-        {
-          Minor = versionNumbers[1];
-        }
-
-        if (versionNumbers.Length > 2)
-        {
-          Patch = versionNumbers[2];
-        }
-
-        if (versionNumbers.Length > 3)
-        {
-          Build = versionNumbers[3];
-        }
-      }
-
-      public Version(string versionString = "")
-      {
-        int[] versionNumbers = new int[4];
-        string[] versionStrings = versionString.Split('.');
-
-        for (var i = 0; i < 4; i++)
-        {
-          if (i >= versionStrings.Length || !int.TryParse(versionStrings[i], out versionNumbers[i]))
-          {
-            versionNumbers[i] = 0;
+    [AllowAnonymous]
+    [HttpGet("overview")]
+    public async Task<IActionResult> GetOverview() {
+      try {
+        List<History> histories = await this.DbContext.History.ToListAsync();
+        Dictionary<int, int> downloadCounts = new Dictionary<int, int>();
+        foreach (History history in histories) {
+          if (!downloadCounts.ContainsKey(history.DeliveredVersion)) {
+            downloadCounts[history.DeliveredVersion] = 1;
+          } else {
+            downloadCounts[history.DeliveredVersion] += 1;
           }
         }
 
-        Major = versionNumbers[0];
-        Minor = versionNumbers[1];
-        Patch = versionNumbers[2];
-        Build = versionNumbers[3];
+        var sortedHistories = from pair in downloadCounts
+                              orderby pair.Value descending
+                              select pair;
+
+        List<OverviewInfo> output = new List<OverviewInfo>();
+        foreach (KeyValuePair<int, int> pair in sortedHistories) {
+          if (output.Count >= 10) {
+            break;
+          }
+
+          Update update = await this.DbContext.Update.SingleOrDefaultAsync(u => u.Id == pair.Key);
+          OverviewInfo info = new OverviewInfo(update, pair.Value);
+          output.Add(info);
+        }
+
+        return Ok(output);
+      } catch (Exception ex) {
+        return StatusCode(500);
       }
     }
 
-    public static bool IsNewerVersion(Version version, Update thatUpdate)
-    {
-      if (version.Major > thatUpdate.Major)
-      {
-        return true;
-      }
+    [AllowAnonymous]
+    [HttpGet("list")]
+    public async Task<IActionResult> GetList() {
+      try {
+        List<Update> updates = await this.DbContext.Update.ToListAsync();
+        List<OverviewInfo> output = new List<OverviewInfo>();
 
-      if (version.Major == thatUpdate.Major && version.Minor > thatUpdate.Minor)
-      {
-        return true;
-      }
+        foreach (Update update in updates) {
+          output.Add(new OverviewInfo(update, -1));
+        }
 
-      if (version.Major == thatUpdate.Major && version.Minor == thatUpdate.Minor && version.Patch > thatUpdate.Patch)
-      {
-        return true;
+        return Ok(output);
+      } catch (Exception ex) {
+        return StatusCode(500);
       }
+    }
 
-      if (version.Major == thatUpdate.Major && version.Minor == thatUpdate.Minor && version.Patch == thatUpdate.Patch && version.Build > thatUpdate.Build)
-      {
-        return true;
+    [AllowAnonymous]
+    [HttpPost("add")]
+    [RequestSizeLimit(1_000_000_000)]
+    public async Task<IActionResult> AddUpdate(IFormFile file, string product, string name, string description, string fileName, string targetVersion, string newVersion, bool latest, bool beta) {
+      try {
+        if (file.Length == 0) {
+          throw new Exception("File length is 0");
+        }
+
+        fileName = string.IsNullOrWhiteSpace(fileName) ? file.Name : fileName;
+
+        using (var fs = new FileStream(string.Format("./file/{0}", fileName), FileMode.Create)) {
+          await file.CopyToAsync(fs);
+        }
+
+        Update update = new Update();
+        update.Product = product;
+        update.Name = name;
+        update.Description = description;
+        update.File = fileName;
+        
+        try {
+          Version target = new Version(targetVersion);
+          update.PreviousMajor = target.Major;
+          update.PreviousMinor = target.Minor;
+          update.PreviousBuild = target.Build;
+          update.PreviousRevision = target.Revision;
+        } catch (Exception ex) {
+          update.PreviousMajor = 0;
+          update.PreviousMinor = 0;
+          update.PreviousBuild = 0;
+          update.PreviousRevision = 0;
+        }
+
+        try {
+          Version version = new Version(newVersion);
+          update.Major = version.Major;
+          update.Minor = version.Minor;
+          update.Build = version.Build;
+          update.Revision = version.Revision;
+        } catch (Exception ex) {
+          return StatusCode(500);
+        }
+
+        update.Latest = latest;
+        update.Beta = beta;
+        
+        await this.DbContext.Update.AddAsync(update);
+        await this.DbContext.SaveChangesAsync();
+
+        return Ok();
+      } catch (Exception ex) {
+        return StatusCode(500);
       }
-
-      return false;
     }
   }
 }

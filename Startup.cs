@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.HttpsPolicy;
+using Microsoft.AspNetCore.SpaServices.ReactDevelopmentServer;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -39,8 +40,6 @@ namespace UpdateProvider
 
             services.AddDbContext<UpdatesContext>(x => x.UseSqlServer(connectionString));
 
-            services.AddDirectoryBrowser();
-
             services.AddAuthentication(options =>
             {
                 options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
@@ -68,20 +67,6 @@ namespace UpdateProvider
                 ServeUnknownFileTypes = true
             });
 
-            app.UseDirectoryBrowser(new DirectoryBrowserOptions
-            {
-                FileProvider = new PhysicalFileProvider(
-                Path.Combine(Directory.GetCurrentDirectory(), "files")),
-                RequestPath = "",
-            });
-
-            // app.UseFileServer(new FileServerOptions() {
-            //     FileProvider = new PhysicalFileProvider(
-            //         Path.Combine(Directory.GetCurrentDirectory(), "files")),
-            //         RequestPath = new Microsoft.AspNetCore.Http.PathString(""),
-            //         EnableDirectoryBrowsing = false
-            // });
-
             app.UseRouting();
 
             app.UseAuthorization();
@@ -90,6 +75,8 @@ namespace UpdateProvider
             {
                 endpoints.MapControllers();
             });
+
+            app.UseAuthentication();
         }
     }
 }

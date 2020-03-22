@@ -124,12 +124,12 @@ CREATE TABLE [dbo].[Update](
 	[Description] [nvarchar](256) NULL,
 	[Previous Major] [int] NOT NULL,
 	[Previous Minor] [int] NOT NULL,
-	[Previous Patch] [int] NOT NULL,
 	[Previous Build] [int] NOT NULL,
+	[Previous Revision] [int] NOT NULL,
 	[Major] [int] NOT NULL,
 	[Minor] [int] NOT NULL,
-	[Patch] [int] NOT NULL,
 	[Build] [int] NOT NULL,
+	[Revision] [int] NOT NULL,
 	[File] [nvarchar](256) NOT NULL,
 	[Latest] [bit] NOT NULL,
 	[Beta] [bit] NOT NULL,
@@ -144,6 +144,9 @@ ALTER TABLE [dbo].[Update] ADD  CONSTRAINT [DF_Update_Latest]  DEFAULT ((0)) FOR
 GO
 
 ALTER TABLE [dbo].[Update] ADD  CONSTRAINT [DF_Update_Beta]  DEFAULT ((0)) FOR [Beta]
+GO
+
+USE [updates]
 GO
 
 /****** Object:  Table [dbo].[History]    Script Date: 2/24/2020 11:26:23 AM ******/
@@ -178,5 +181,21 @@ REFERENCES [Update] ([Id])
 GO
 
 ALTER TABLE [History] CHECK CONSTRAINT [FK_History_Update_PreviousVersion]
+GO
+
+USE [updates]
+GO
+
+/****** Object:  Table [dbo].[User]    Script Date: 2/26/2020 2:19:53 PM ******/
+SET ANSI_NULLS ON
+GO
+
+SET QUOTED_IDENTIFIER ON
+GO
+
+CREATE TABLE [dbo].[User](
+	[Id] [int] IDENTITY(1,1) NOT NULL,
+	[Email] [nvarchar](128) NULL
+) ON [PRIMARY]
 GO
 

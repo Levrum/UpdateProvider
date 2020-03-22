@@ -17,12 +17,12 @@ namespace UpdateProvider.Models
         public string Description { get; set; }
         public int PreviousMajor { get; set; }
         public int PreviousMinor { get; set; }
-        public int PreviousPatch { get; set; }
         public int PreviousBuild { get; set; }
+        public int PreviousRevision { get; set; }
         public int Major { get; set; }
         public int Minor { get; set; }
-        public int Patch { get; set; }
         public int Build { get; set; }
+        public int Revision { get; set; }
         public string File { get; set; }
         public bool Latest { get; set; }
         public bool Beta { get; set; }

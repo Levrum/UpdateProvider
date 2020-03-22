@@ -56,7 +56,7 @@ namespace UpdateProvider.Models
 
                 entity.Property(e => e.Minor).HasColumnName("Minor");
 
-                entity.Property(e => e.Patch).HasColumnName("Patch");
+                entity.Property(e => e.Revision).HasColumnName("Revision");
 
                 entity.Property(e => e.PreviousBuild).HasColumnName("Previous Build");
 
@@ -64,7 +64,7 @@ namespace UpdateProvider.Models
 
                 entity.Property(e => e.PreviousMinor).HasColumnName("Previous Minor");
 
-                entity.Property(e => e.PreviousPatch).HasColumnName("Previous Patch");
+                entity.Property(e => e.PreviousRevision).HasColumnName("Previous Revision");
 
                 entity.Property(e => e.Description).HasMaxLength(256);
 
